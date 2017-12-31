@@ -1,5 +1,15 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.keyboard3.gradle'
+apply plugin: 'com.keyboard3.pluginproject'
+public class ThreadPlugin implements Plugin<Project> {
+
+    void apply(Project project) {
+        System.out.println("========================");
+        System.out.println("这是build.gradle插件!");
+        System.out.println("========================");
+    }
+}
+apply plugin: ThreadPlugin
 
 android {
     compileSdkVersion 26
