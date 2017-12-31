@@ -6,8 +6,12 @@ import org.gradle.api.Project
 public class SecondPlugin implements Plugin<Project> {
 
     void apply(Project project) {
-        System.out.println("========================");
-        System.out.println("这是buildsrc插件!");
-        System.out.println("========================");
+        project.afterEvaluate {
+            if (project.plugins.hasPlugin("com.android.application")) {
+                println "project.afterEvaluate"
+                def android = project.extensions.getByName("android")
+                println android
+            }
+        }
     }
 }
