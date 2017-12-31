@@ -1,10 +1,11 @@
 apply plugin: 'groovy'
 
 dependencies {
-    compile gradleApi()//gradle sdk
-    compile localGroovy()//groovy sdk
+    compile gradleApi()
+    compile localGroovy()
+    compile 'com.android.tools.build:gradle:2.3.3'  // 或者其他你需要调试的 android-plugin 的版本
 }
-
 repositories {
+    google()
     jcenter()
 }
