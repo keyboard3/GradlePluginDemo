@@ -57,3 +57,27 @@
         super.visitInsn(opcode)
     }
 ```
+- 字节码修改之后
+```java
+public class MainActivity extends AppCompatActivity {
+    public MainActivity() {
+    }
+
+    protected void onCreate(Bundle savedInstanceState) {
+        this.println(this.getClass().getSimpleName(), "onCreate-before");
+        super.onCreate(savedInstanceState);
+        this.setContentView(2131296283);
+        this.println(this.getClass().getSimpleName(), "onCreate-after");
+    }
+
+    protected void onResume() {
+        this.println(this.getClass().getSimpleName(), "onResume-before");
+        super.onResume();
+        this.println(this.getClass().getSimpleName(), "onResume-after");
+    }
+
+    public void println(String name, String value) {
+        System.out.println(name + "-" + value);
+    }
+}
+```
