@@ -1,1 +1,1 @@
-include ':app', ':buildsrc', ':pluginproject'
+include ':app', ':buildsrc', ':pluginproject', ':hibeaver'

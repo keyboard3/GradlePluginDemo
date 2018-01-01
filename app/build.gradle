@@ -1,6 +1,14 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.keyboard3.gradle'
 apply plugin: 'com.keyboard3.pluginproject'
+
+
+apply plugin: 'hiBeaver'
+import com.bryansharp.gradle.hibeaver.utils.MethodLogAdapter
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+
 public class ThreadPlugin implements Plugin<Project> {
 
     void apply(Project project) {
@@ -9,6 +17,7 @@ public class ThreadPlugin implements Plugin<Project> {
         System.out.println("========================");
     }
 }
+
 apply plugin: ThreadPlugin
 
 android {
@@ -32,10 +41,79 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
+//or you can import like bellow:
+//import org.objectweb.asm.*
+hiBeaver {
+    //下面这个参数仅仅影响log输出，为本次修改命名，无实际意义，不配置也可以
+    hiBeaverModifyName = 'myHibeaverTest'
+    //设置为true可以显示帮助内容，默认为true
+    showHelp = false
+    //keepQuiet默认为false,为true时不会有字节码修改的log输出，建议为false
+    keepQuiet = false
+    //下面的参数设置为true时会输出工程编译耗时信息
+    watchTimeConsume = false
+
+    //重头戏是配置下面的参数：modifyMatchMaps
+    //基础配置结构形如： ['class':[[:],[:]],'class':[[:],[:]]], 类型是 Map<String, List<Map<String, Object>>>
+    modifyMatchMaps = [
+            //此处可以进行模糊匹配，!表示排除，!android*即表示排除掉android开头的全类名。
+            //|符号不完全表示或，而仅仅是匹配的分隔符。*表示任意长度（>0）的任意字符
+            '*Activity|*Receiver|!android*': [
+                    //methodDesc设置为空代表对methodDesc不进行限制
+                    //方法名也可以用模糊匹配 用javap -s 命令来查看类中方法的description
+                    ['methodName': 'on**', 'methodDesc': null, 'adapter': {
+                        ClassVisitor cv, int access, String name, String desc, String signature, String[] exceptions ->
+                            MethodVisitor methodVisitor = cv.visitMethod(access, name, desc, signature, exceptions);
+                            MethodVisitor adapter = new MethodLogAdapter(methodVisitor) {
+                                @Override
+                                void visitCode() {
+                                    super.visitCode();
+                                    /* methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out",
+                                             "Ljava/io/PrintStream;");
+                                     methodVisitor.visitLdcInsn(name + "-before");
+                                     methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+                                             "(Ljava/lang/String;)V");*/
+                                    methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                                    methodVisitor.visitInsn(Opcodes.DUP);
+
+                                    methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass",
+                                            "()Ljava/lang/Class;");
+                                    methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getSimpleName",
+                                            "()Ljava/lang/String;");
+
+                                    methodVisitor.visitLdcInsn(name + "-before")
+                                    methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "com/keyboard3/gradleplugindemo/MainActivity", "println",
+                                            "(Ljava/lang/String;Ljava/lang/String;)V");
+                                }
+
+                                @Override
+                                void visitInsn(int opcode) {
+                                    if (opcode == Opcodes.RETURN) {
+                                        // mv.visitTypeInsn(Opcodes.NEW, "com/xyz/Check");//新建一个Check类
+
+                                        methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                                        methodVisitor.visitInsn(Opcodes.DUP);
+
+                                        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass",
+                                                "()Ljava/lang/Class;");
+                                        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getSimpleName",
+                                                "()Ljava/lang/String;");
+
+                                        methodVisitor.visitLdcInsn(name + "-after")
+                                        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "com/keyboard3/gradleplugindemo/MainActivity", "println",
+                                                "(Ljava/lang/String;Ljava/lang/String;)V");
+                                    }
+                                    super.visitInsn(opcode)
+                                }
+                            }
+                            return adapter;
+                    }]
+            ]
+    ]
 }
 /*
 gradle plugin调试
