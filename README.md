@@ -6,9 +6,9 @@
 - 仅在项目可见的 buildsrc
 - 独立项目的 plugin
 - debug 调试 plugin
-# packageDebug
+# packageDebug分支
 - 在 buildsrc 里调试打包流程
-# asm
+# asm分支
 android打包过程提供了Transform api。我们只需要写个gradle plugin 注册Transform类，在这个Transform内部对所有的class做处理<br>
 - gradle 修改字节码
 为每个 *Activity|*Receiver|!android* 的 on** 回调函数的开始和结束打上Log
