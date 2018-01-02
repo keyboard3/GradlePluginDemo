@@ -11,74 +11,56 @@
 # asm分支
 android打包过程提供了Transform api。我们只需要写个gradle plugin 注册Transform类，在这个Transform内部对所有的class做处理<br>
 - gradle 修改字节码
-为每个 *Activity|*Receiver|!android* 的 on** 回调函数的开始和结束打上Log
+为每个 *Activity|*Receiver|!android* 的 on** 回调方法统计执行耗时
 <br>
-<img src="images/out1.png" width="350">
+<img src="images/out1.png" width="500">
 
 
 ```java
-    @Override
-    void visitCode() {
-        super.visitCode();
-        /* methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out",
-                 "Ljava/io/PrintStream;");
-         methodVisitor.visitLdcInsn(name + "-before");
-         methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
-                 "(Ljava/lang/String;)V");*/
+@Override
+void visitCode() {
+    super.visitCode();
+    methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+    methodVisitor.visitInsn(Opcodes.DUP);
+    methodVisitor.visitLdcInsn(name);
+    methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, "com/keyboard3/gradleplugindemo/MethodTimeUtil", "startTime",
+            "(Ljava/lang/Object;Ljava/lang/String;)V");
+}
+
+@Override
+void visitInsn(int opcode) {
+    if (opcode == Opcodes.RETURN) {
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
-        
-        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass",
-                "()Ljava/lang/Class;");
-        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getSimpleName",
-                "()Ljava/lang/String;");
-        
-        methodVisitor.visitLdcInsn(name + "-before")
-        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "com/keyboard3/gradleplugindemo/MainActivity", "println",
-                "(Ljava/lang/String;Ljava/lang/String;)V");
+        methodVisitor.visitLdcInsn(name);
+        methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, "com/keyboard3/gradleplugindemo/MethodTimeUtil", "endTime",
+                "(Ljava/lang/Object;Ljava/lang/String;)V");
     }
-    
-    @Override
-    void visitInsn(int opcode) {
-        if (opcode == Opcodes.RETURN) {
-            // mv.visitTypeInsn(Opcodes.NEW, "com/xyz/Check");//新建一个Check类
-    
-            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitInsn(Opcodes.DUP);
-    
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "getClass",
-                    "()Ljava/lang/Class;");
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getSimpleName",
-                    "()Ljava/lang/String;");
-    
-            methodVisitor.visitLdcInsn(name + "-after")
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "com/keyboard3/gradleplugindemo/MainActivity", "println",
-                    "(Ljava/lang/String;Ljava/lang/String;)V");
-        }
-        super.visitInsn(opcode)
-    }
+    super.visitInsn(opcode)
+}
 ```
-- 字节码修改之后
+- 字节码修改前后对比
+<br>
+<img src="images/out3.png" width="500">
+<img src="images/out2.png" width="500">
+
+- 耗时统计方法实现
 ```java
-public class MainActivity extends AppCompatActivity {
-    public MainActivity() {
+public class MethodTimeUtil {
+    private static Map<String, Long> methodStartMap = new HashMap<>();
+
+    public static void startTime(Object object, String methodName) {
+        methodStartMap.put(object.getClass().getCanonicalName() + "." + methodName, System.currentTimeMillis());
     }
 
-    protected void onCreate(Bundle savedInstanceState) {
-        this.println(this.getClass().getSimpleName(), "onCreate-before");
-        super.onCreate(savedInstanceState);
-        this.setContentView(2131296283);
-        this.println(this.getClass().getSimpleName(), "onCreate-after");
-    }
-
-    protected void onResume() {
-        this.println(this.getClass().getSimpleName(), "onResume-before");
-        super.onResume();
-        this.println(this.getClass().getSimpleName(), "onResume-after");
-    }
-
-    public void println(String name, String value) {
-        System.out.println(name + "-" + value);
+    public static void endTime(Object object, String methodName) {
+        String path = object.getClass().getCanonicalName() + "." + methodName;
+        if (methodStartMap.containsKey(path)) {
+            long start = methodStartMap.get(path);
+            long end = System.currentTimeMillis();
+            long val = end - start;
+            Log.d("keyboard3", path + "() 耗时：" + val + "毫秒");
+        }
     }
 }
 ```
